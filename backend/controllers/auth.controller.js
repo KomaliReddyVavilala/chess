@@ -4,10 +4,9 @@ const jwt = require("jsonwebtoken");
 
 const login = async (req, res) => {
     try {
-        const { email, password
-        } = req.body;
+        const { email, password } = req.body;
         if (!email || !password) {
-            return res.status(400).json({ message: "Please fill tall the fields" });
+            return res.status(400).json({ message: "Please fill all the fields" });
         }
         const user = await User.findOne({ email });
         if (!user) {

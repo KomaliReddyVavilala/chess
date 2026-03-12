@@ -5,11 +5,12 @@ const initialState = {
     user : null,
     status : 'idle' , //'idle' | 'success' | 'pending' | 'error'
     error : null,
+    isAuthChecked : false,
 };
-export const login = createAsyncThunk("/auth/login",
-    async ({username , password} , thunkAPI) =>{
+export const login = createAsyncThunk("auth/login",
+    async ({email , password} , thunkAPI) =>{
         try{
-            const res = await api.post("/auth/login", { username , password });
+            const res = await api.post("/auth/login", { email , password });
             return res.data;
         } catch(err){
             return thunkAPI.rejectWithValue(err.message || "Login Failed");
@@ -33,6 +34,26 @@ export const logout = createAsyncThunk("/auth/logout",async(_, thunkAPI ) =>{
     } catch(err) {
         return thunkAPI.rejectWithValue(err.message || "Logout Failed");
     }
+});
+
+//fetchMe reducer
+export const fetchMe = createAsyncThunk("/auth/me", async(_, thunkAPI) =>{
+    try{
+        const res = await api.get("/auth/me");
+        return res.data;
+    }catch(err){
+        return thunkAPI.rejectWithValue(err.message || "fetchme failed")
+    }
+});
+
+//Refresh Reducer
+export const refresh = createAsyncThunk("/auth/refresh", async(_, thunkAPI) =>{
+    try{
+        const res = await api.post("/auth/refresh");
+        return res.data;
+    }catch(err){
+        return thunkAPI.rejectWithValue(err.message || "Refresh Failed")
+    }
 })
 
 const authSlice = createSlice({
@@ -40,7 +61,7 @@ const authSlice = createSlice({
     initialState,
     reducers: {},
     extraReducers : (builder) =>{
-        builder.addCase();
+        //builder.addCase();
         function pending(state){
             state.user = null;
             state.status = "pending";
@@ -61,7 +82,27 @@ const authSlice = createSlice({
             .addCase(login.rejected, rejected)
             .addCase(signup.pending, pending)
             .addCase(signup.fulfilled, fufilled)
-            .addCase(signup.rejected, rejected);
+            .addCase(signup.rejected, rejected)
+            .addCase(logout.pending,pending)
+            .addCase(logout.fulfilled, (state) => {
+                state.user = null;
+                state.status = "success";
+                state.error = null;
+            })
+            .addCase(logout.rejected, rejected)
+            .addCase(fetchMe.pending, pending)
+            .addCase(fetchMe.fulfilled, (state,action) =>{
+                state.user = action.payload;
+                state.status = "success";
+                state.error = null;
+                state.isAuthChecked = true;
+            })
+            .addCase(fetchMe.rejected , (state,action) => {
+                state.error = action.payload;
+                state.status = "error";
+                state.user = null;
+                state.isAuthChecked = true;
+            });
     },
 });
 
